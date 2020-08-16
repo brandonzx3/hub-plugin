@@ -1,0 +1,4 @@
+name: server-selector
+version: ${project.version}
+main: me.brandonzx3.ServerSelector.Selector
+api-version: 1.13
