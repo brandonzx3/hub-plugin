@@ -11,13 +11,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import net.arcadelia.coop.client.ArcAPI;
+import net.arcadelia.coop.client.ArcService;
 import net.arcadelia.coop.event.ArcPlayerJoinEvent;
+import net.arcadelia.coop.intent.Intent;
+import net.arcadelia.coop.intent.TransferToServiceIntent;
 import net.md_5.bungee.api.ChatColor;
 
 class NavItem<Slot, Item, Service> {
@@ -54,7 +59,7 @@ public class Selector extends JavaPlugin implements Listener {
         }
 
         getServer().getPluginManager().registerEvents(this, this);
-;
+        new NavGui(this);
     }
 
     @EventHandler
@@ -102,7 +107,7 @@ class NavGui implements Listener {
         Player player = e.getPlayer();
         Material holdingItem = player.getItemInHand().getType();
         if(holdingItem != null) {
-            if(holdingItem == Material.NETHER_STAR) {
+            if(holdingItem.equals(Material.NETHER_STAR)) {
                 OpenInventory(player);
             }
         }
@@ -115,5 +120,18 @@ class NavGui implements Listener {
         final ItemStack clickedItem = e.getCurrentItem();
         if(clickedItem == null || clickedItem.getType() == Material.AIR) return;
         Player player = (Player)e.getWhoClicked();
+        int slot = e.getSlot();
+        for(NavItem navItem : selector.navItems) {
+            if(slot == (Integer)navItem.slot) {
+                ArcAPI.getInstance().dispatchTransferRequest(player, new Intent[] {new TransferToServiceIntent((String)navItem.service) });
+            }
+        }
+    }
+
+    @EventHandler
+    void OnInventoryDrag(final InventoryDragEvent e) {
+        if(e.getInventory() == inv) {
+            e.setCancelled(true);
+        }
     }
 }
