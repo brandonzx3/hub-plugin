@@ -2,12 +2,16 @@ package me.brandonzx3.ServerSelector;
 
 import java.util.ArrayList;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -27,13 +31,10 @@ class NavItem<Slot, Item, Service> {
     }
 }
 
-class Navigator {
-    int size;
-    ArrayList<NavItem<Integer, Material, String>> navItems = new ArrayList();
-}
-
-
 public class Selector extends JavaPlugin implements Listener {
+
+    int guiSize;
+    ArrayList<NavItem<Integer, Material, String>> navItems = new ArrayList();
 
     private void ConfigFailed() {
         throw new RuntimeException("Failed to load config file");
@@ -47,13 +48,13 @@ public class Selector extends JavaPlugin implements Listener {
         ConfigurationSection selectorSection = configRoot.getConfigurationSection("Selector");
 
         if(selectorSection == null) ConfigFailed();
-        Navigator nav = new Navigator();
-        nav.size = selectorSection.getInt("size");
+        this.guiSize = selectorSection.getInt("size");
         for(java.util.Map<?,?> navItem : selectorSection.getMapList("items")) {
-            nav.navItems.add(new NavItem(navItem.get("slot"), Material.matchMaterial((String) navItem.get("item")), navItem.get("service")));
+            this.navItems.add(new NavItem(navItem.get("slot"), Material.matchMaterial((String) navItem.get("item")), navItem.get("service")));
         }
 
         getServer().getPluginManager().registerEvents(this, this);
+;
     }
 
     @EventHandler
@@ -67,5 +68,52 @@ public class Selector extends JavaPlugin implements Listener {
         if(inv.getItem(4).getType() != Material.NETHER_STAR) {
             inv.setItem(4, navigator);
         }
+    }
+}
+
+class NavGui implements Listener {
+
+    public final Inventory inv;
+    Selector selector;
+    
+    public NavGui(Selector selector) {
+        this.selector = selector;
+        Bukkit.getServer().getPluginManager().registerEvents(this, selector);
+        inv = Bukkit.createInventory(null, selector.guiSize, "Server Selector");
+        addItems();
+    }
+
+    void addItems() {
+        for(NavItem navItem : selector.navItems) {
+            ItemStack item = new ItemStack((Material) navItem.item);
+            ItemMeta itemMeta = item.getItemMeta();
+            itemMeta.setDisplayName((String) navItem.service);
+            item.setItemMeta(itemMeta);
+            inv.setItem((Integer) navItem.slot, item);
+        }
+    }
+
+    void OpenInventory(final HumanEntity ent) {
+        ent.openInventory(inv);
+    }
+
+    @EventHandler
+    void OnPlayerInteract(final PlayerInteractEvent e) {
+        Player player = e.getPlayer();
+        Material holdingItem = player.getItemInHand().getType();
+        if(holdingItem != null) {
+            if(holdingItem == Material.NETHER_STAR) {
+                OpenInventory(player);
+            }
+        }
+    }
+
+    @EventHandler
+    void OnInventoryClick(final InventoryClickEvent e) {
+        if(e.getInventory() != inv) return;
+        e.setCancelled(true);
+        final ItemStack clickedItem = e.getCurrentItem();
+        if(clickedItem == null || clickedItem.getType() == Material.AIR) return;
+        Player player = (Player)e.getWhoClicked();
     }
 }
