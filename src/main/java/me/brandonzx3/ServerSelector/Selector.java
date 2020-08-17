@@ -70,9 +70,7 @@ public class Selector extends JavaPlugin implements Listener {
         ItemMeta navMeta = navigator.getItemMeta();
         navMeta.setDisplayName(ChatColor.BOLD + "" + ChatColor.DARK_PURPLE + "Navigator");
         navigator.setItemMeta(navMeta);
-        if(inv.getItem(4).getType() != Material.NETHER_STAR) {
-            inv.setItem(4, navigator);
-        }
+        inv.setItem(4, navigator);
     }
 }
 

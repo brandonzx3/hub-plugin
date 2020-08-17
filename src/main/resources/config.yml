@@ -1,4 +1,0 @@
-Selector:
-  size: 9
-  items:
-    - {slot: 3, item: GOLD_INGOT, service: Goldrush}
